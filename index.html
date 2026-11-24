@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>הצ'אט שלי</title>
+  <title>דוטי — מגמת מדעי הבינה המלאכותית</title>
   <style>
-    /* =========================================
-       אזור העיצוב שלך - כאן משנים צבעים בקלות
-       ========================================= */
     :root {
-      --primary-color: #4f46e5;       /* צבע ראשי (כותרת, כפתור ובועות משתמש) */
-      --bg-color: #f4f6fb;            /* צבע רקע כללי */
-      --chat-bg: #ffffff;             /* צבע רקע חלון השיחה */
-      --bot-bubble: #eef2ff;          /* צבע בועת התשובה של הבוט */
-      --text-dark: #1e293b;           /* צבע טקסט כהה */
+      --primary-color: #1f6e84;
+      --primary-hover: #175668;
+      --accent-mint: #7ce0e6;
+      --bg-color: #eef8fa;
+      --chat-bg: #ffffff;
+      --bot-bubble: #e3f5f8;
+      --text-dark: #133c48;
     }
 
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
@@ -23,27 +22,30 @@
     }
     .chat-container {
       width: 100%; max-width: 480px; height: 92vh; max-height: 720px;
-      background: var(--chat-bg); border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      background: var(--chat-bg); border-radius: 24px;
+      box-shadow: 0 12px 32px rgba(31, 110, 132, 0.14);
+      border: 1px solid #d2eef3;
       display: flex; flex-direction: column; overflow: hidden;
     }
     .chat-header {
-      background: var(--primary-color); color: white; padding: 16px 20px;
-      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #1f6e84 0%, #2b8ca3 100%);
+      color: white; padding: 16px 20px;
+      display: flex; align-items: center; gap: 14px;
     }
     .avatar {
-      width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-      background: white; border: 2px solid rgba(255,255,255,0.8);
+      width: 54px; height: 54px; border-radius: 50%; object-fit: cover;
+      background: #ffffff; border: 2.5px solid var(--accent-mint);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     }
-    .header-info h1 { margin: 0; font-size: 17px; }
-    .header-info p { margin: 2px 0 0; font-size: 12px; opacity: 0.85; }
+    .header-info h1 { margin: 0; font-size: 19px; font-weight: 700; }
+    .header-info p { margin: 3px 0 0; font-size: 13px; color: #d8f5f9; }
     .messages {
       flex: 1; padding: 20px; overflow-y: auto;
       display: flex; flex-direction: column; gap: 12px;
     }
     .msg {
-      max-width: 82%; padding: 12px 16px; border-radius: 16px;
-      line-height: 1.5; font-size: 15px; white-space: pre-wrap;
+      max-width: 82%; padding: 12px 16px; border-radius: 18px;
+      line-height: 1.55; font-size: 15px; white-space: pre-wrap;
     }
     .msg.bot {
       background: var(--bot-bubble); color: var(--text-dark);
@@ -54,19 +56,21 @@
       align-self: flex-end; border-bottom-left-radius: 4px;
     }
     .input-area {
-      padding: 12px; border-top: 1px solid #e2e8f0;
-      display: flex; gap: 8px; background: white;
+      padding: 12px 14px; border-top: 1px solid #d9eff3;
+      display: flex; gap: 8px; background: #fafdfe;
     }
     input {
-      flex: 1; padding: 12px 16px; border: 1px solid #cbd5e1;
+      flex: 1; padding: 12px 16px; border: 1px solid #bde3ea;
       border-radius: 24px; font-size: 15px; outline: none;
+      color: var(--text-dark); background: white;
     }
     input:focus { border-color: var(--primary-color); }
     button {
       background: var(--primary-color); color: white; border: none;
-      padding: 0 20px; border-radius: 24px; font-weight: 600;
-      cursor: pointer; font-size: 15px;
+      padding: 0 22px; border-radius: 24px; font-weight: 600;
+      cursor: pointer; font-size: 15px; transition: background 0.2s;
     }
+    button:hover { background: var(--primary-hover); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
@@ -74,25 +78,23 @@
 
 <div class="chat-container">
   <div class="chat-header">
-    <!-- כאן אפשר להחליף את כתובת התמונה לקישור לתמונת האווטאר שלך -->
-    <img id="botAvatar" class="avatar" src="https://api.dicebear.com/9.x/bottts-neutral/svg?seed=Doti" alt="Avatar" />
+    <img id="botAvatar" class="avatar" src="avatar.png" alt="דוטי" />
     <div class="header-info">
-      <h1 id="botName">העוזרת הדיגיטלית</h1>
-      <p id="botSubtitle">זמינה לשאלות</p>
+      <h1 id="botName">דוטי</h1>
+      <p id="botSubtitle">הבוט של מגמת מדעי הבינה המלאכותית</p>
     </div>
   </div>
 
   <div class="messages" id="messages"></div>
 
   <form class="input-area" id="chatForm">
-    <input type="text" id="userInput" placeholder="כתבי כאן הודעה..." autocomplete="off" required />
+    <input type="text" id="userInput" placeholder="שאלו את דוטי..." autocomplete="off" required />
     <button type="submit" id="sendBtn">שליחה</button>
   </form>
 </div>
 
 <script>
-  // הודעת הפתיחה שתופיע מיד כשהמשתמש נכנס לצ'אט
-  const WELCOME_MESSAGE = "היי! איך אפשר לעזור לך היום?";
+  const WELCOME_MESSAGE = "היי! אני דוטי, הבוט של מגמת מדעי הבינה המלאכותית 👋\nאני אמנם לא חושב בעצמי, אבל אני יודע לענות על שאלות מתוך חומרי המגמה. במה אוכל לעזור?";
 
   const messagesDiv = document.getElementById('messages');
   const chatForm = document.getElementById('chatForm');
@@ -109,7 +111,6 @@
     return div;
   }
 
-  // הצגת הודעת פתיחה
   addMessage(WELCOME_MESSAGE, 'bot');
 
   chatForm.addEventListener('submit', async (e) => {
@@ -122,7 +123,7 @@
     sendBtn.disabled = true;
 
     conversationHistory.push({ role: 'user', parts: [{ text }] });
-    const loadingMsg = addMessage('מקלידה...', 'bot');
+    const loadingMsg = addMessage('דוטי מקליד...', 'bot');
 
     try {
       const response = await fetch('/api/chat', {
@@ -131,16 +132,4 @@
         body: JSON.stringify({ messages: conversationHistory })
       });
       const data = await response.json();
-      loadingMsg.textContent = data.reply;
-      conversationHistory.push({ role: 'model', parts: [{ text: data.reply }] });
-    } catch (err) {
-      loadingMsg.textContent = 'אופס, הייתה תקלה זמנית. נסי שוב.';
-    } finally {
-      sendBtn.disabled = false;
-      userInput.focus();
-    }
-  });
-</script>
-
-</body>
-</html>
+      loadingMsg.textContent
