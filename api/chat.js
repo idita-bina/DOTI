@@ -1,8 +1,8 @@
 module.exports = async function handler(req, res) {
   // רשימת הכתובות המורשות להפעיל את דוטי (ללא לוכסן / בסוף!)
   const ALLOWED_ORIGINS = [
-    'https://csit.education.gov.il',       // כתובת אתר המגמה הרשמי
-    'https://doti-olive.vercel.app/?',    // החליפי בכתובת האפליקציה שלך ב-Vercel
+   'https://doti-olive.vercel.app',
+    'https://csit.education.gov.il'
 'https://vercel.com/idita-bina'
   ];
 
