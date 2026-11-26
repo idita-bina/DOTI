@@ -98,57 +98,45 @@ try {
       return res.status(500).json({ error: 'חסר מפתח API בהגדרות השרת' });
     }
 
-    // רשימת מודלים לפי סדר עדיפות: אם הראשון עמוס, עוברים מיד לבא
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
-    let lastError = '';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 9000);
 
-    for (const model of models) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4500);
-
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey
-            },
-            signal: controller.signal,
-            body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: HIDDEN_KNOWLEDGE }]
-              },
-              contents: messages,
-              generationConfig: {
-                maxOutputTokens: 450,
-                temperature: 0.4,
-                thinkingConfig: { thinkingBudget: 0 }
-              }
-            })
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: HIDDEN_KNOWLEDGE }]
+          },
+          contents: messages,
+          generationConfig: {
+            maxOutputTokens: 450,
+            temperature: 0.4
           }
-        );
-
-        clearTimeout(timeout);
-        const data = await response.json();
-
-        if (response.ok) {
-          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply) {
-            return res.status(200).json({ reply });
-          }
-        }
-
-        lastError = data?.error?.message || `HTTP ${response.status}`;
-      } catch (err) {
-        clearTimeout(timeout);
-        lastError = err.name === 'AbortError' ? 'Timeout' : err.message;
+        })
       }
+    );
+
+    clearTimeout(timeout);
+    const data = await response.json();
+
+    if (!response.ok) {
+      const googleError = data?.error?.message || JSON.stringify(data);
+      return res.status(response.status).json({ error: `שגיאת Gemini (${response.status}): ${googleError}` });
     }
 
-    return res.status(503).json({ error: `לא התקבלה תשובה מהמודלים (${lastError})` });
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'מצטערת, לא הצלחתי לייצר תשובה כרגע.';
+    return res.status(200).json({ reply });
   } catch (error) {
-    res.status(500).json({ error: `שגיאת שרת: ${error.message}` });
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ error: 'התשובה התעכבה מעל 9 שניות בגלל עומס רגעי אצל גוגל, נסו שוב.' });
+    }
+    return res.status(500).json({ error: `שגיאת שרת: ${error.message}` });
   }
 };
