@@ -1,6 +1,6 @@
 module.exports = async function handler(req, res) {
   // מאפשר גישה מכל אתר שבו תטמיעי את הצ'אט
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'https://doti-olive.vercel.app/?');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
