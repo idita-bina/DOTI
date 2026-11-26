@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
 
     const trimmedMessages = messages.slice(-6);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
+    const timeout = setTimeout(() => controller.abort(), 14000);
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
@@ -68,6 +68,9 @@ module.exports = async function handler(req, res) {
           generationConfig: {
             maxOutputTokens: 1500,
             temperature: 0.4,
+		thinkingConfig: {
+              thinkingLevel: 'LOW'
+            }
           }
         })
       }
