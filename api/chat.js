@@ -1,14 +1,16 @@
 module.exports = async function handler(req, res) {
-  // רשימת הכתובות המורשות להפעיל את דוטי (ללא לוכסן / בסוף!)
+  // רשימת האתרים החיצוניים המורשים להפעיל את דוטי (ללא לוכסן / בסוף)
   const ALLOWED_ORIGINS = [
-   'https://doti-olive.vercel.app',
+    'https://doti-olive.vercel.app',
     'https://csit.education.gov.il'
-'https://vercel.com/idita-bina'
   ];
 
   const origin = req.headers.origin;
+  const host = req.headers.host;
+  const isSameOrigin = !origin || origin === `https://${host}`;
+  const isAllowedExternal = origin && ALLOWED_ORIGINS.includes(origin);
 
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (isAllowedExternal) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
@@ -19,10 +21,11 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // חסימה בצד השרת אם הבקשה הגיעה מדומיין לא מורשה (חוסך קריאות ל-Gemini)
-  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+  // מאשר רק בקשות מתוך אתר ה-Vercel עצמו או מרשימת האתרים המורשים
+  if (!isSameOrigin && !isAllowedExternal) {
     return res.status(403).json({ error: 'גישה חסומה: המקור אינו מורשה להפעיל את השירות.' });
   }
+
   const HIDDEN_KNOWLEDGE = `
 תפקיד: את דּוֹטִי, הבוט הרשמי של מגמת מדעי הבינה המלאכותית של משרד החינוך (כיתות י'-י"ב). את עונה לתלמידי כיתה ט' ולהוריהם המתעניינים במגמה.
 
