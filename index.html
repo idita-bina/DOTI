@@ -65,6 +65,7 @@
       color: var(--text-dark); background: white;
     }
     input:focus { border-color: var(--primary-color); }
+    input:disabled { background: #f0f6f8; color: #7a9aa3; cursor: not-allowed; }
     button {
       background: var(--primary-color); color: white; border: none;
       padding: 0 22px; border-radius: 24px; font-weight: 600;
@@ -92,14 +93,33 @@
     <button type="submit" id="sendBtn">שליחה</button>
   </form>
 </div>
+
 <script>
   const WELCOME_MESSAGE = "היי! אני דוטי, הבוט של מגמת מדעי הבינה המלאכותית 👋\nאני אמנם לא חושבת בעצמי, אבל אני יודעת לענות על שאלות מתוך חומרי המגמה. במה אוכל לעזור?";
+  const MAX_MESSAGES_PER_VISIT = 20;
+  const LIMIT_REACHED_TEXT = "איזה כיף שהתעניינתם כל כך לעומק! הגענו למכסת ההודעות לביקור הזה 😊\nאם נשארו לכם עוד שאלות פרטניות, תוכלו לפנות לרכז/ת המגמה בבית הספר או להיכנס לאתר הפיקוח: https://csit.education.gov.il";
 
   const messagesDiv = document.getElementById('messages');
   const chatForm = document.getElementById('chatForm');
   const userInput = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
   let conversationHistory = [];
+
+  function getVisitMessageCount() {
+    return parseInt(sessionStorage.getItem('dotty_msg_count') || '0', 10);
+  }
+
+  function incrementVisitMessageCount() {
+    const nextCount = getVisitMessageCount() + 1;
+    sessionStorage.setItem('dotty_msg_count', String(nextCount));
+    return nextCount;
+  }
+
+  function lockChatInput() {
+    userInput.disabled = true;
+    userInput.placeholder = 'הגעתם למכסת ההודעות לביקור זה 😊';
+    sendBtn.disabled = true;
+  }
 
   function addMessage(text, sender) {
     const div = document.createElement('div');
@@ -112,17 +132,30 @@
 
   addMessage(WELCOME_MESSAGE, 'bot');
 
+  if (getVisitMessageCount() >= MAX_MESSAGES_PER_VISIT) {
+    addMessage(LIMIT_REACHED_TEXT, 'bot');
+    lockChatInput();
+  }
+
   chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = userInput.value.trim();
     if (!text) return;
+
+    if (getVisitMessageCount() >= MAX_MESSAGES_PER_VISIT) {
+      addMessage(LIMIT_REACHED_TEXT, 'bot');
+      lockChatInput();
+      return;
+    }
+
+    const currentCount = incrementVisitMessageCount();
 
     addMessage(text, 'user');
     userInput.value = '';
     sendBtn.disabled = true;
 
     conversationHistory.push({ role: 'user', parts: [{ text }] });
-    const loadingMsg = addMessage('דוטי מקליד...', 'bot');
+    const loadingMsg = addMessage('דוטי מקלידה...', 'bot');
 
     try {
       const response = await fetch('/api/chat', {
@@ -138,12 +171,19 @@
         const reply = data.reply || data.text || 'לא התקבלה תשובה.';
         loadingMsg.textContent = reply;
         conversationHistory.push({ role: 'model', parts: [{ text: reply }] });
+
+        if (currentCount >= MAX_MESSAGES_PER_VISIT) {
+          addMessage(LIMIT_REACHED_TEXT, 'bot');
+          lockChatInput();
+        }
       }
     } catch (err) {
       loadingMsg.textContent = 'שגיאת חיבור לשרת. נסו שוב בעוד רגע.';
     } finally {
-      sendBtn.disabled = false;
-      userInput.focus();
+      if (getVisitMessageCount() < MAX_MESSAGES_PER_VISIT) {
+        sendBtn.disabled = false;
+        userInput.focus();
+      }
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
   });
