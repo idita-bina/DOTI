@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
           },
           contents: trimmedMessages,
           generationConfig: {
-            maxOutputTokens: 400,
+            maxOutputTokens: 1500,
             temperature: 0.4,
           }
         })
