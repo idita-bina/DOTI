@@ -91,10 +91,27 @@ module.exports = async function handler(req, res) {
     }
 
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'מצטערת, לא הצלחתי לייצר תשובה כרגע.';
+// תיעוד שקט לטבלת Google Sheets (ללא חסימת התשובה במקרה של עיכוב)
+    const sheetsUrl = process.env.SHEETS_WEBHOOK_URL;
+    if (sheetsUrl) {
+      try {
+        const logController = new AbortController();
+        const logTimeout = setTimeout(() => logController.abort(), 2500);
+        await fetch(sheetsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: logController.signal,
+          body: JSON.stringify({ question: lastMsg, answer: reply })
+        });
+        clearTimeout(logTimeout);
+      } catch (logErr) {
+        console.error('Sheets logging skipped:', logErr.message);
+      }
+    }
     return res.status(200).json({ reply });
   } catch (error) {
     if (error.name === 'AbortError') {
-      return res.status(504).json({ error: 'התשובה התעכבה מעל 9 שניות, נסו לשלוח שוב.' });
+      return res.status(504).json({ error: 'התשובה התעכבה מידי, נסו לשלוח שוב.' });
     }
     return res.status(500).json({ error: `שגיאת שרת: ${error.message}` });
   }
