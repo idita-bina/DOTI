@@ -117,55 +117,66 @@ try {
     for (let attempt = 1; attempt <= 2; attempt++) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4200);
+try {
+    const { messages } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey
-            },
-            signal: controller.signal,
-            body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: HIDDEN_KNOWLEDGE }]
-              },
-              contents: trimmedMessages,
-              generationConfig: {
-                maxOutputTokens: 450,
-                temperature: 0.4
-              }
-            })
-          }
-        );
-
-        clearTimeout(timeout);
-        const data = await response.json();
-
-        if (response.ok) {
-          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'מצטערת, לא הצלחתי לייצר תשובה כרגע.';
-          return res.status(200).json({ reply });
-        }
-
-        lastStatus = response.status;
-        lastError = data?.error?.message || JSON.stringify(data);
-
-        if ((response.status === 503 || response.status === 429) && attempt === 1) {
-          await new Promise((r) => setTimeout(r, 700));
-          continue;
-        }
-        break;
-      } catch (err) {
-        clearTimeout(timeout);
-        lastStatus = 504;
-        lastError = err.name === 'AbortError' ? 'Timeout' : err.message;
-      }
+    if (!apiKey) {
+      return res.status(500).json({ error: 'חסר מפתח API בהגדרות השרת' });
     }
 
-    return res.status(lastStatus).json({ error: `שגיאת Gemini (${lastStatus}): ${lastError}` });
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'לא התקבלה הודעה' });
+    }
+
+    const lastMsg = messages[messages.length - 1]?.parts?.[0]?.text || '';
+    if (lastMsg.length > 350) {
+      return res.status(400).json({ error: 'השאלה ארוכה מדי — אשמח לענות על שאלה ממוקדת עד 350 תווים 😊' });
+    }
+
+    const trimmedMessages = messages.slice(-6);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 9000);
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: HIDDEN_KNOWLEDGE }]
+          },
+          contents: trimmedMessages,
+          generationConfig: {
+            maxOutputTokens: 400,
+            temperature: 0.4,
+            thinkingConfig: {
+              thinkingLevel: 'MINIMAL'
+            }
+          }
+        })
+      }
+    );
+
+    clearTimeout(timeout);
+    const data = await response.json();
+
+    if (!response.ok) {
+      const googleError = data?.error?.message || JSON.stringify(data);
+      return res.status(response.status).json({ error: `שגיאת Gemini (${response.status}): ${googleError}` });
+    }
+
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'מצטערת, לא הצלחתי לייצר תשובה כרגע.';
+    return res.status(200).json({ reply });
   } catch (error) {
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ error: 'התשובה התעכבה מעל 9 שניות, נסו לשלוח שוב.' });
+    }
     return res.status(500).json({ error: `שגיאת שרת: ${error.message}` });
   }
 };
