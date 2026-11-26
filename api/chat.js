@@ -90,16 +90,22 @@ module.exports = async function handler(req, res) {
 - הפעלה וניהול סוכני AI: הדור הבא של הבינה המלאכותית מבין מטרה, מתכנן מהלכים ופועל בעצמו, וצוותים של מערכות חכמות מבצעים משימות במקביל. במגמה לומדים איך מודלים לומדים מנתונים, איך מזהים הטיות וטעויות, ואיפה נגמר האלגוריתם ומתחיל שיקול הדעת האנושי.]
 --- סוף המידע ---
 `;
-
-  try {
+try {
     const { messages } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
+    if (!apiKey) {
+      return res.status(500).json({ error: 'חסר משתנה GEMINI_API_KEY בהגדרות של Vercel' });
+    }
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
         body: JSON.stringify({
           systemInstruction: {
             parts: [{ text: HIDDEN_KNOWLEDGE }]
@@ -110,9 +116,15 @@ module.exports = async function handler(req, res) {
     );
 
     const data = await response.json();
+
+    if (!response.ok) {
+      const googleError = data?.error?.message || JSON.stringify(data);
+      return res.status(response.status).json({ error: `שגיאת Google API: ${googleError}` });
+    }
+
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'מצטערת, לא הצלחתי לייצר תשובה כרגע.';
     res.status(200).json({ reply });
   } catch (error) {
-    res.status(500).json({ error: 'שגיאה בתקשורת עם השרת' });
+    res.status(500).json({ error: `שגיאה בתקשורת עם השרת: ${error.message}` });
   }
 };
