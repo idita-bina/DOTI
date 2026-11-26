@@ -29,16 +29,16 @@
     }
     .chat-header {
       background: linear-gradient(135deg, #1f6e84 0%, #2b8ca3 100%);
-      color: white; padding: 16px 20px;
-      display: flex; align-items: center; gap: 14px;
+      color: white; padding: 20px 22px;
+      display: flex; align-items: center; gap: 18px;
     }
     .avatar {
-      width: 54px; height: 54px; border-radius: 50%; object-fit: cover;
-      background: #ffffff; border: 2.5px solid var(--accent-mint);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      width: 78px; height: 78px; border-radius: 50%; object-fit: cover;
+      flex-shrink: 0; background: #ffffff; border: 3px solid var(--accent-mint);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
     }
-    .header-info h1 { margin: 0; font-size: 19px; font-weight: 700; }
-    .header-info p { margin: 3px 0 0; font-size: 13px; color: #d8f5f9; }
+    .header-info h1 { margin: 0; font-size: 25px; font-weight: 700; line-height: 1.2; }
+    .header-info p { margin: 5px 0 0; font-size: 16px; color: #d8f5f9; line-height: 1.35; }
     .messages {
       flex: 1; padding: 20px; overflow-y: auto;
       display: flex; flex-direction: column; gap: 12px;
@@ -92,7 +92,6 @@
     <button type="submit" id="sendBtn">שליחה</button>
   </form>
 </div>
-
 <script>
   const WELCOME_MESSAGE = "היי! אני דוטי, הבוט של מגמת מדעי הבינה המלאכותית 👋\nאני אמנם לא חושב בעצמי, אבל אני יודע לענות על שאלות מתוך חומרי המגמה. במה אוכל לעזור?";
 
