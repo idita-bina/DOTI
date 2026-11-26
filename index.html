@@ -132,4 +132,23 @@
         body: JSON.stringify({ messages: conversationHistory })
       });
       const data = await response.json();
-      loadingMsg.textContent
+
+      if (!response.ok) {
+        loadingMsg.textContent = `שגיאה: ${data.error || 'תקלה בתקשורת עם השרת'}`;
+      } else {
+        const reply = data.reply || data.text || 'לא התקבלה תשובה.';
+        loadingMsg.textContent = reply;
+        conversationHistory.push({ role: 'model', parts: [{ text: reply }] });
+      }
+    } catch (err) {
+      loadingMsg.textContent = 'שגיאת חיבור לשרת. נסו שוב בעוד רגע.';
+    } finally {
+      sendBtn.disabled = false;
+      userInput.focus();
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  });
+</script>
+
+</body>
+</html>
